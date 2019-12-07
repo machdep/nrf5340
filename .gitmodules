@@ -1,3 +1,6 @@
 [submodule "mdepx"]
 	path = mdepx
 	url = https://github.com/machdep/mdepx
+[submodule "nrfxlib"]
+	path = nrfxlib
+	url = https://github.com/NordicPlayground/nrfxlib
