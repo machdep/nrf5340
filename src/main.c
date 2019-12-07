@@ -35,6 +35,8 @@
 #include <arm/arm/nvic.h>
 #include <arm/nordicsemi/nrf5340_app_core.h>
 
+#include "ble.h"
+
 struct uarte_softc uarte_sc;
 struct arm_nvic_softc nvic_sc;
 struct spu_softc spu_sc;
@@ -100,6 +102,8 @@ app_init(void)
 int
 main(void)
 {
+
+	ble_test();
 
 	while (1)
 		printf("Hello world!\n");
