@@ -24,9 +24,9 @@
  * SUCH DAMAGE.
  */
 
-#ifndef	_SRC_BLE_H_
-#define	_SRC_BLE_H_
+#ifndef	_NRF_H_
+#define	_NRF_H_
 
-int ble_test(void);
+typedef uint32_t IRQn_Type;
 
-#endif /* !_SRC_BLE_H_ */
+#endif /* !_NRF_H_ */
