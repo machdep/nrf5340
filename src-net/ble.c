@@ -90,6 +90,8 @@ ble_test(void)
 	clock_cfg.rc_ctiv = BLE_CONTROLLER_RECOMMENDED_RC_CTIV;
 	clock_cfg.rc_temp_ctiv = BLE_CONTROLLER_RECOMMENDED_RC_TEMP_CTIV;
 
+	printf("%s: Initializing ble controller\n", __func__);
+
 	err = ble_controller_init(blectlr_assertion_handler,
 	    &clock_cfg,
 	    BLE_CONTROLLER_PROCESS_IRQn);
@@ -98,6 +100,8 @@ ble_test(void)
 		printf("%s: controller init returned %d\n", __func__, err);
 		return (err);
 	};
+
+	printf("%s: Enabling ble controller\n", __func__);
 
 	err = ble_controller_enable(host_signal, ble_controller_mempool);
 	if (err != 0) {

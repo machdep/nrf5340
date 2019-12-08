@@ -33,7 +33,7 @@
 #include <sys/thread.h>
 
 #include <arm/arm/nvic.h>
-#include <arm/nordicsemi/nrf5340_app_core.h>
+#include <arm/nordicsemi/nrf5340_net_core.h>
 
 #include "ble.h"
 
@@ -43,13 +43,21 @@ struct spu_softc spu_sc;
 struct power_softc power_sc;
 struct timer_softc timer0_sc;
 
-#define	UART_PIN_TX	20
-#define	UART_PIN_RX	22
+#define	UART_PIN_TX	25
+#define	UART_PIN_RX	26
 #define	UART_BAUDRATE	115200
 #define	NVIC_NINTRS	128
 
+static void
+rng_intr(void *arg, struct trapframe *tf, int irq)
+{
+
+	printf("%s\n", __func__);
+}
+
 static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { uarte_intr, &uarte_sc },
+	[ID_RNG]    = { rng_intr, NULL },
 	[ID_TIMER0] = { timer_intr, &timer0_sc },
 };
 

@@ -4,10 +4,15 @@ OSDIR = mdepx
 
 CMD = python3 -B ${OSDIR}/tools/emitter.py
 
-all:
-	@${CMD} mdepx.conf
-	${CROSS_COMPILE}objcopy -O ihex obj/${APP}.elf obj/${APP}.hex
-	${CROSS_COMPILE}size obj/${APP}.elf
+app:
+	@${CMD} mdepx-app.conf
+	${CROSS_COMPILE}objcopy -O ihex obj/${APP}-app.elf obj/${APP}-app.hex
+	${CROSS_COMPILE}size obj/${APP}-app.elf
+
+net:
+	@${CMD} mdepx-net.conf
+	${CROSS_COMPILE}objcopy -O ihex obj/${APP}-net.elf obj/${APP}-net.hex
+	${CROSS_COMPILE}size obj/${APP}-net.elf
 
 clean:
 	@rm -rf obj/*
