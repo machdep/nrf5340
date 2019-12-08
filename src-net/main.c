@@ -35,6 +35,8 @@
 #include <arm/arm/nvic.h>
 #include <arm/nordicsemi/nrf5340_net_core.h>
 
+#include <nrfxlib/ble_controller/include/ble_controller.h>
+
 #include "ble.h"
 
 struct uarte_softc uarte_sc;
@@ -49,16 +51,46 @@ struct timer_softc timer0_sc;
 #define	NVIC_NINTRS	128
 
 static void
-rng_intr(void *arg, struct trapframe *tf, int irq)
+ble_rng_intr(void *arg, struct trapframe *tf, int irq)
 {
 
-	printf("%s\n", __func__);
+	ble_controller_RNG_IRQHandler();
+}
+
+static void
+ble_timer_intr(void *arg, struct trapframe *tf, int irq)
+{
+
+	ble_controller_TIMER0_IRQHandler();
+}
+
+static void
+ble_radio_intr(void *arg, struct trapframe *tf, int irq)
+{
+
+	ble_controller_RADIO_IRQHandler();
+}
+
+static void
+ble_rtc_intr(void *arg, struct trapframe *tf, int irq)
+{
+
+	ble_controller_RTC0_IRQHandler();
+}
+
+static void
+ble_power_intr(void *arg, struct trapframe *tf, int irq)
+{
+	ble_controller_POWER_CLOCK_IRQHandler();
 }
 
 static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { uarte_intr, &uarte_sc },
-	[ID_RNG]    = { rng_intr, NULL },
-	[ID_TIMER0] = { timer_intr, &timer0_sc },
+	[ID_RNG]    = { ble_rng_intr, NULL },
+	[ID_TIMER0] = { ble_timer_intr, NULL },
+	[ID_RADIO]  = { ble_radio_intr, NULL },
+	[ID_RTC0]   = { ble_rtc_intr, NULL },
+	[ID_POWER]  = { ble_power_intr, NULL },
 };
 
 static void
@@ -113,8 +145,9 @@ main(void)
 
 	ble_test();
 
-	while (1)
-		printf("Hello world!\n");
+	printf("Hello world!\n");
+
+	while (1);
 
 	return (0);
 }
