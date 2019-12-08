@@ -4,6 +4,9 @@ OSDIR = mdepx
 
 CMD = python3 -B ${OSDIR}/tools/emitter.py
 
+all:
+	@echo Run make app or make net
+
 app:
 	@${CMD} mdepx-app.conf
 	${CROSS_COMPILE}objcopy -O ihex obj/${APP}-app.elf obj/${APP}-app.hex
