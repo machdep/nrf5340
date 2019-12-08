@@ -33,7 +33,7 @@
 #include <sys/thread.h>
 
 #include <arm/arm/nvic.h>
-#include <arm/nordicsemi/nrf5340_app_core.h>
+#include <arm/nordicsemi/nrf5340_net_core.h>
 
 #include <nrfxlib/ble_controller/include/ble_controller.h>
 
