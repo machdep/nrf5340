@@ -118,13 +118,13 @@ app_init(void)
 
 	nrf_uarte_init(&uarte_sc, NRF_UARTE0,
 	    UART_PIN_TX, UART_PIN_RX, UART_BAUDRATE);
-	console_register(uart_putchar, (void *)&uarte_sc);
+	mdx_console_register(uart_putchar, (void *)&uarte_sc);
 	nrf_uarte_register_callback(&uarte_sc, nrf_input, NULL);
 
 	printf("mdepx initialized\n");
 
-	fl_init();
-	fl_add_region(0x20030000, 0x10000);
+	mdx_fl_init();
+	mdx_fl_add_region(0x20030000, 0x10000);
 
 	nrf_power_init(&power_sc, NRF_POWER);
 
