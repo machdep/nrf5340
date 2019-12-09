@@ -38,6 +38,7 @@
 #include <nrfxlib/ble_controller/include/ble_controller.h>
 
 #include "ble.h"
+#include "hci.h"
 
 struct arm_nvic_softc nvic_sc;
 struct nrf_uarte_softc uarte_sc;
@@ -81,7 +82,6 @@ ble_rtc_intr(void *arg, struct trapframe *tf, int irq)
 static void
 ble_power_intr(void *arg, struct trapframe *tf, int irq)
 {
-
 	ble_controller_POWER_CLOCK_IRQHandler();
 }
 
@@ -125,7 +125,7 @@ app_init(void)
 	printf("mdepx initialized\n");
 
 	mdx_fl_init();
-	mdx_fl_add_region(0x20030000, 0x10000);
+	mdx_fl_add_region(0x21008000, 0x8000);
 
 	nrf_power_init(&power_sc, NRF_POWER);
 
