@@ -81,6 +81,7 @@ ble_rtc_intr(void *arg, struct trapframe *tf, int irq)
 static void
 ble_power_intr(void *arg, struct trapframe *tf, int irq)
 {
+
 	ble_controller_POWER_CLOCK_IRQHandler();
 }
 

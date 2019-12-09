@@ -82,7 +82,7 @@ app_init(void)
 	printf("mdepx initialized\n");
 
 	mdx_fl_init();
-	mdx_fl_add_region(0x20030000, 0x10000);
+	mdx_fl_add_region(0x20020000, 0x60000);
 
 	nrf_power_init(&power_sc, NRF_POWER);
 
