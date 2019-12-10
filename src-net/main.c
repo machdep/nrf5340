@@ -44,7 +44,7 @@ struct arm_nvic_softc nvic_sc;
 struct nrf_uarte_softc uarte_sc;
 struct nrf_spu_softc spu_sc;
 struct nrf_power_softc power_sc;
-struct nrf_timer_softc timer0_sc;
+struct nrf_timer_softc timer1_sc;
 
 #define	UART_PIN_TX	25
 #define	UART_PIN_RX	26
@@ -82,6 +82,7 @@ ble_rtc_intr(void *arg, struct trapframe *tf, int irq)
 static void
 ble_power_intr(void *arg, struct trapframe *tf, int irq)
 {
+
 	ble_controller_POWER_CLOCK_IRQHandler();
 }
 
@@ -89,6 +90,7 @@ static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { nrf_uarte_intr, &uarte_sc },
 	[ID_RNG]    = { ble_rng_intr, NULL },
 	[ID_TIMER0] = { ble_timer_intr, NULL },
+	[ID_TIMER1] = { nrf_timer_intr, &timer1_sc },
 	[ID_RADIO]  = { ble_radio_intr, NULL },
 	[ID_RTC0]   = { ble_rtc_intr, NULL },
 	[ID_POWER]  = { ble_power_intr, NULL },
@@ -133,9 +135,10 @@ app_init(void)
 	arm_nvic_install_intr_map(&nvic_sc, intr_map);
 	arm_nvic_set_prio(&nvic_sc, ID_IPC, 6);
 
-	nrf_timer_init(&timer0_sc, NRF_TIMER0);
-	arm_nvic_enable_intr(&nvic_sc, ID_TIMER0);
+	nrf_timer_init(&timer1_sc, NRF_TIMER1);
+	arm_nvic_enable_intr(&nvic_sc, ID_TIMER1);
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
+	arm_nvic_enable_intr(&nvic_sc, ID_EGU0);
 
 	return (0);
 }
@@ -144,9 +147,9 @@ int
 main(void)
 {
 
-	ble_test();
-
 	printf("Hello world!\n");
+
+	ble_test();
 
 	while (1);
 
