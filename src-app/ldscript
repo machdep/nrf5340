@@ -38,8 +38,4 @@ SECTIONS
 		*(COMMON)
 		_ebss = ABSOLUTE(.);
 	} > sram1
-
-	. = ALIGN(4);
-	. = . + 0x1000;
-	stack_top = .;
 }
