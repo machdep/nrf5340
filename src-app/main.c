@@ -40,6 +40,7 @@ struct nrf_uarte_softc uarte_sc;
 struct nrf_spu_softc spu_sc;
 struct nrf_power_softc power_sc;
 struct nrf_timer_softc timer0_sc;
+struct nrf_ipc_softc ipc_sc;
 
 #define	UART_PIN_TX	20
 #define	UART_PIN_RX	22
@@ -85,6 +86,7 @@ app_init(void)
 	mdx_fl_add_region(0x20020000, 0x10000);
 
 	nrf_power_init(&power_sc, NRF_POWER);
+	nrf_ipc_init(&ipc_sc, NRF_IPC);
 
 	arm_nvic_init(&nvic_sc, BASE_SCS);
 	arm_nvic_install_intr_map(&nvic_sc, intr_map);

@@ -44,6 +44,7 @@ struct nrf_uarte_softc uarte_sc;
 struct nrf_spu_softc spu_sc;
 struct nrf_power_softc power_sc;
 struct nrf_timer_softc timer1_sc;
+struct nrf_ipc_softc ipc_sc;
 
 #define	UART_PIN_TX	25
 #define	UART_PIN_RX	26
@@ -134,6 +135,7 @@ app_init(void)
 	printf("mdepx initialized\n");
 
 	nrf_power_init(&power_sc, NRF_POWER);
+	nrf_ipc_init(&ipc_sc, NRF_IPC);
 
 	arm_nvic_init(&nvic_sc, BASE_SCS);
 	arm_nvic_install_intr_map(&nvic_sc, intr_map);
