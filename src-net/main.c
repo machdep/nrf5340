@@ -86,8 +86,16 @@ ble_power_intr(void *arg, struct trapframe *tf, int irq)
 	ble_controller_POWER_CLOCK_IRQHandler();
 }
 
+static void
+nrf_egu0_intr(void *arg, struct trapframe *tf, int irq)
+{
+
+	ble_controller_low_prio_tasks_process();
+}
+
 static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { nrf_uarte_intr, &uarte_sc },
+	[ID_EGU0]   = { nrf_egu0_intr, &uarte_sc },
 	[ID_RNG]    = { ble_rng_intr, NULL },
 	[ID_TIMER0] = { ble_timer_intr, NULL },
 	[ID_TIMER1] = { nrf_timer_intr, &timer1_sc },
@@ -125,9 +133,6 @@ app_init(void)
 	nrf_uarte_register_callback(&uarte_sc, nrf_input, NULL);
 
 	printf("mdepx initialized\n");
-
-	mdx_fl_init();
-	mdx_fl_add_region(0x21008000, 0x8000);
 
 	nrf_power_init(&power_sc, NRF_POWER);
 
