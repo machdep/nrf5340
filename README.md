@@ -1,5 +1,10 @@
 # nRF5340
 
+This is a work-in-progress demo for Bluetooth LE on nRF5340.
+Nordic libble controller s140 is used in this demo.
+
+Current status: BLE host-layer library is included to the main core app, Nordic link-layer library has set up on the net core, but communication between them has not yet established.
+
 Nordicsemi nRF5340 is a dual-core ARM Cortex-M33.
 
 For nRF5340-DK (application core) connect micro usb cable to J2, for other boards connect UART pins as follows:
