@@ -101,8 +101,10 @@ int
 main(void)
 {
 
-	while (1)
+	while (1) {
 		printf("Hello world!\n");
+		mdx_tsleep(200000);
+	}
 
 	return (0);
 }

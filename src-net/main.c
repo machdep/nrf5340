@@ -38,7 +38,6 @@
 #include <nrfxlib/ble_controller/include/ble_controller.h>
 
 #include "ble.h"
-#include "hci.h"
 
 struct arm_nvic_softc nvic_sc;
 struct nrf_uarte_softc uarte_sc;
@@ -156,7 +155,8 @@ main(void)
 
 	ble_test();
 
-	while (1);
+	while (1)
+		mdx_tsleep(1000000);
 
 	return (0);
 }
