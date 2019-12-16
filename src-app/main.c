@@ -105,19 +105,19 @@ app_init(void)
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
 	arm_nvic_enable_intr(&nvic_sc, ID_IPC);
 
-	return (0);
-}
-
-int
-main(void)
-{
-
 	/* Receive event 1 on channel 1 */
 	nrf_ipc_configure_recv(&ipc_sc, 1, (1 << 1), ble_ipc_intr, NULL);
 	nrf_ipc_inten(&ipc_sc, 1, true);
 
 	/* Send event 0 to channel 0 */
 	nrf_ipc_configure_send(&ipc_sc, 0, (1 << 0));
+
+	return (0);
+}
+
+int
+main(void)
+{
 
 	while (1) {
 		printf("Hello world!\n");
