@@ -47,9 +47,17 @@ struct nrf_ipc_softc ipc_sc;
 #define	UART_BAUDRATE	115200
 #define	NVIC_NINTRS	128
 
+static void
+ble_ipc_intr(void *arg)
+{
+
+	printf("%s\n", __func__);
+}
+
 static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { nrf_uarte_intr, &uarte_sc },
 	[ID_TIMER0] = { nrf_timer_intr, &timer0_sc },
+	[ID_IPC]    = { nrf_ipc_intr, &ipc_sc },
 };
 
 static void
@@ -95,6 +103,7 @@ app_init(void)
 	nrf_timer_init(&timer0_sc, NRF_TIMER0);
 	arm_nvic_enable_intr(&nvic_sc, ID_TIMER0);
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
+	arm_nvic_enable_intr(&nvic_sc, ID_IPC);
 
 	return (0);
 }
@@ -103,9 +112,17 @@ int
 main(void)
 {
 
+	/* Receive event 1 on channel 1 */
+	nrf_ipc_configure_recv(&ipc_sc, 1, (1 << 1), ble_ipc_intr, NULL);
+	nrf_ipc_inten(&ipc_sc, 1, true);
+
+	/* Send event 0 to channel 0 */
+	nrf_ipc_configure_send(&ipc_sc, 0, (1 << 0));
+
 	while (1) {
 		printf("Hello world!\n");
-		mdx_tsleep(200000);
+		mdx_tsleep(1000000);
+		nrf_ipc_trigger(&ipc_sc, 0);
 	}
 
 	return (0);

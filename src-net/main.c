@@ -93,6 +93,13 @@ nrf_egu0_intr(void *arg, struct trapframe *tf, int irq)
 	ble_controller_low_prio_tasks_process();
 }
 
+static void
+ble_ipc_intr(void *arg)
+{
+
+	printf("%s\n", __func__);
+}
+
 static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { nrf_uarte_intr, &uarte_sc },
 	[ID_EGU0]   = { nrf_egu0_intr, &uarte_sc },
@@ -102,6 +109,7 @@ static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_RADIO]  = { ble_radio_intr, NULL },
 	[ID_RTC0]   = { ble_rtc_intr, NULL },
 	[ID_POWER]  = { ble_power_intr, NULL },
+	[ID_IPC]    = { nrf_ipc_intr, &ipc_sc },
 };
 
 static void
@@ -145,6 +153,14 @@ app_init(void)
 	arm_nvic_enable_intr(&nvic_sc, ID_TIMER1);
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
 	arm_nvic_enable_intr(&nvic_sc, ID_EGU0);
+	arm_nvic_enable_intr(&nvic_sc, ID_IPC);
+
+	/* Send event 1 to channel 1 */
+	nrf_ipc_configure_send(&ipc_sc, 1, (1 << 1));
+
+	/* Receive event 0 on channel 0 */
+	nrf_ipc_configure_recv(&ipc_sc, 0, (1 << 0), ble_ipc_intr, NULL);
+	nrf_ipc_inten(&ipc_sc, 0, true);
 
 	return (0);
 }
@@ -157,8 +173,10 @@ main(void)
 
 	ble_test();
 
-	while (1)
-		mdx_tsleep(1000000);
+	while (1) {
+		mdx_tsleep(2000000);
+		nrf_ipc_trigger(&ipc_sc, 1);
+	}
 
 	return (0);
 }
