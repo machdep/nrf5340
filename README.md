@@ -1,6 +1,6 @@
 # nRF5340
 
-This is a work-in-progress demo for Bluetooth LE on nRF5340.
+This is a demo for Bluetooth LE on nRF5340.
 Nordic libble controller s140 is used in this demo.
 
 Current status: advertising, establishing connection and pairing works fine (tested with Xiaomi MI9 Lite). Pairing after successful pairing/unpairing does not work until nRF5340 restart.
