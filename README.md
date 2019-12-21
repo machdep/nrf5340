@@ -42,11 +42,15 @@ This app depends on the [secure bootloader for nRF5340](https://github.com/machd
     $ cd nrf5340
     $ make app net
 
-## Program the chip using nrfjprog
-    $ nrfjprog -f NRF53 --erasepage 0x40000-0x90000
-    $ nrfjprog -f NRF53 --program obj/nrf5340-app.hex -r
+## Program the network core using nrfjprog
 
     $ nrfjprog -f NRF53 --coprocessor CP_NETWORK --erasepage 0x01000000-0x01040000
     $ nrfjprog -f NRF53 --coprocessor CP_NETWORK --program obj/nrf5340-net.hex -r
 
-![alt text](https://raw.githubusercontent.com/machdep/nrf9160/master/images/nrf5340-dk.jpg)
+## Program the application core using nrfjprog
+    $ nrfjprog -f NRF53 --erasepage 0x40000-0x90000
+    $ nrfjprog -f NRF53 --program obj/nrf5340-app.hex -r
+
+Note: both cores has to be reset after programming due to ringbuffer mechanism (both master and slave have to be re-initialized).
+
+![alt text](https://raw.githubusercontent.com/machdep/nrf5340/master/images/nrf5340-pdk.jpg)
