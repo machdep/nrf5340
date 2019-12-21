@@ -31,9 +31,12 @@
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/thread.h>
+#include <sys/ringbuf.h>
 
 #include <arm/arm/nvic.h>
 #include <arm/nordicsemi/nrf5340_app_core.h>
+
+#include "ble.h"
 
 struct arm_nvic_softc nvic_sc;
 struct nrf_uarte_softc uarte_sc;
@@ -41,18 +44,13 @@ struct nrf_spu_softc spu_sc;
 struct nrf_power_softc power_sc;
 struct nrf_timer_softc timer0_sc;
 struct nrf_ipc_softc ipc_sc;
+struct mdx_ringbuf_softc ringbuf_tx_sc;
+struct mdx_ringbuf_softc ringbuf_rx_sc;
 
 #define	UART_PIN_TX	20
 #define	UART_PIN_RX	22
 #define	UART_BAUDRATE	115200
 #define	NVIC_NINTRS	128
-
-static void
-ble_ipc_intr(void *arg)
-{
-
-	printf("%s\n", __func__);
-}
 
 static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { nrf_uarte_intr, &uarte_sc },
@@ -91,7 +89,7 @@ app_init(void)
 	printf("mdepx initialized\n");
 
 	mdx_fl_init();
-	mdx_fl_add_region(0x20020000, 0x10000);
+	mdx_fl_add_region(0x20021000, 0x1f000);
 
 	nrf_power_init(&power_sc, NRF_POWER);
 	nrf_ipc_init(&ipc_sc, NRF_IPC);
@@ -119,11 +117,12 @@ int
 main(void)
 {
 
-	while (1) {
-		printf("Hello world!\n");
-		mdx_tsleep(1000000);
-		nrf_ipc_trigger(&ipc_sc, 0);
-	}
+	printf("Hello world!\n");
+
+	ble_test();
+
+	while (1)
+		mdx_tsleep(2000000);
 
 	return (0);
 }

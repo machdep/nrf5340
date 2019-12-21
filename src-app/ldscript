@@ -2,8 +2,9 @@ MEMORY
 {
 	flash   (rx)  : ORIGIN = 0x00040000, LENGTH = 1M - 0x40000
 	sram0   (rwx) : ORIGIN = 0x20000000, LENGTH = 64K /* boot loader */
-	sram1   (rwx) : ORIGIN = 0x20010000, LENGTH = 64K /* this app */
-	sram2   (rwx) : ORIGIN = 0x20020000, LENGTH = 384K /* malloc */
+	sram1   (rwx) : ORIGIN = 0x20010000, LENGTH = 4K /* ring buffer */
+	sram2   (rwx) : ORIGIN = 0x20011000, LENGTH = 64K /* this app */
+	sram3   (rwx) : ORIGIN = 0x20021000, LENGTH = 0x1f000 /* malloc */
 }
 
 ENTRY(__start)
@@ -30,12 +31,12 @@ SECTIONS
 		_sdata = ABSOLUTE(.);
 		*(.data*);
 		_edata = ABSOLUTE(.);
-	} > sram1 AT > flash
+	} > sram2 AT > flash
 
 	.bss : {
 		_sbss = ABSOLUTE(.);
 		*(.bss*)
 		*(COMMON)
 		_ebss = ABSOLUTE(.);
-	} > sram1
+	} > sram2
 }

@@ -31,9 +31,19 @@
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/thread.h>
+#include <sys/ringbuf.h>
+#include <sys/sem.h>
 
 #include <arm/arm/nvic.h>
 #include <arm/nordicsemi/nrf5340_net_core.h>
+
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/log.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
+#include <bluetooth/conn.h>
+#include <bluetooth/driver.h>
 
 #include <nrfxlib/ble_controller/include/ble_controller.h>
 #include <nrfxlib/ble_controller/include/ble_controller_hci.h>
@@ -67,23 +77,17 @@
 #define MEMPOOL_SIZE ((BLE_SLAVE_COUNT * SLAVE_MEM_SIZE) +	\
 	(BLE_MASTER_COUNT * MASTER_MEM_SIZE))
 
+extern struct nrf_ipc_softc ipc_sc;
+extern struct mdx_ringbuf_softc ringbuf_tx_sc;
+extern struct mdx_ringbuf_softc ringbuf_rx_sc;
+
+static struct thread recv_td;
+static struct thread send_td;
+static uint8_t recv_td_stack[2048];
+static uint8_t send_td_stack[2048];
 static uint8_t ble_controller_mempool[MEMPOOL_SIZE];
-
-static void
-ble_assertion_handler(const char *const file, const uint32_t line)
-{
-
-	printf("%s: %s:%d\n", __func__, file, line);
-
-	while (1);
-}
-
-static void
-host_signal(void)
-{
-
-	printf("%s\n", __func__);
-}
+static mdx_sem_t sem;
+static mdx_sem_t sem_send;
 
 static void
 print_build_rev(void)
@@ -100,18 +104,152 @@ print_build_rev(void)
 	printf("\n");
 }
 
+static void
+ble_send(void *arg)
+{
+	struct mdx_ringbuf *rb;
+	int err;
+
+	while (1) {
+		mdx_sem_wait(&sem_send);
+
+		/* Send a backet to BLE controller */
+
+		while ((err = mdx_ringbuf_head(&ringbuf_tx_sc, &rb)) == 0) {
+			//printf("%s: got buf %x *buf %d bufsize %d\n",
+			//    __func__, (int)rb->buf,
+			//    *(volatile uint32_t *)rb->buf, rb->fill);
+			switch (rb->user) {
+			case BT_ACL_OUT:
+				critical_enter();
+				hci_data_put(rb->buf);
+				critical_exit();
+				break;
+			case BT_CMD:
+				critical_enter();
+				hci_cmd_put(rb->buf);
+				critical_exit();
+				break;
+			default:
+				panic("unknown packet type");
+			}
+			mdx_ringbuf_submit(&ringbuf_tx_sc);
+		}
+
+		mdx_sem_post(&sem);
+	}
+}
+
+static void
+ble_recv(void *arg)
+{
+	struct bt_hci_acl_hdr *hdr;
+	struct mdx_ringbuf *rb;
+	int err;
+
+	while (1) {
+		mdx_sem_wait(&sem);
+
+		err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
+		if (err)
+			panic("could not get an entry in the ringbuf");
+
+		critical_enter();
+		err = hci_data_get((uint8_t *)rb->buf);
+		critical_exit();
+		if (err == 0) {
+			hdr = (void *)rb->buf;
+			rb->fill = hdr->len + sizeof(struct bt_hci_acl_hdr);
+			rb->user = BT_ACL_IN;
+			mdx_ringbuf_submit(&ringbuf_rx_sc);
+			nrf_ipc_trigger(&ipc_sc, 1);
+		}
+
+		err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
+		if (err)
+			panic("could not get an entry in the ringbuf");
+
+		critical_enter();
+		err = hci_evt_get((uint8_t *)rb->buf);
+		critical_exit();
+		if (err == 0) {
+#if 0
+			struct bt_hci_evt_hdr *evt_hdr;
+			evt_hdr = (void *)rb->buf;
+			evt_hdr->len + sizeof(struct bt_hci_evt_hdr);
+#else
+			rb->fill = 74;
+#endif
+			rb->user = BT_EVT;
+			mdx_ringbuf_submit(&ringbuf_rx_sc);
+			nrf_ipc_trigger(&ipc_sc, 1);
+		}
+	}
+}
+
+static void
+ble_assertion_handler(const char *const file, const uint32_t line)
+{
+
+	printf("%s: %s:%d\n", __func__, file, line);
+
+	while (1);
+}
+
+static void
+host_signal(void)
+{
+
+	mdx_sem_post(&sem);
+}
+
+void
+ble_ipc_intr(void *arg)
+{
+
+	mdx_sem_post(&sem_send);
+}
+
 int
 ble_test(void)
 {
 	nrf_lf_clock_cfg_t clock_cfg;
+	struct thread *td;
 	int err;
+
+	mdx_sem_init(&sem, 0);
+	mdx_sem_init(&sem_send, 0);
+
+	td = &recv_td;
+	bzero(td, sizeof(struct thread));
+	td->td_stack = (void *)((uint32_t)recv_td_stack + 2048);
+	td->td_stack_size = 2048;
+	mdx_thread_setup(td, "ble_recv", 1, 100000, ble_recv, NULL);
+	if (td == NULL)
+		panic("Could not create bt recv thread.");
+	mdx_sched_add(td);
+
+	td = &send_td;
+	bzero(td, sizeof(struct thread));
+	td->td_stack = (void *)((uint32_t)send_td_stack + 2048);
+	td->td_stack_size = 2048;
+	mdx_thread_setup(td, "ble_send", 1, 100000, ble_send, NULL);
+	if (td == NULL)
+		panic("Could not create bt send thread.");
+	mdx_sched_add(td);
 
 	print_build_rev();
 
-	clock_cfg.lf_clk_source = NRF_LF_CLOCK_SRC_RC;
+	bzero(&clock_cfg, sizeof(nrf_lf_clock_cfg_t));
 	clock_cfg.accuracy = NRF_LF_CLOCK_ACCURACY_500_PPM;
+
+#if 1
+	clock_cfg.lf_clk_source = NRF_LF_CLOCK_SRC_XTAL;
+#else
+	clock_cfg.lf_clk_source = NRF_LF_CLOCK_SRC_RC;
 	clock_cfg.rc_ctiv = BLE_CONTROLLER_RECOMMENDED_RC_CTIV;
 	clock_cfg.rc_temp_ctiv = BLE_CONTROLLER_RECOMMENDED_RC_TEMP_CTIV;
+#endif
 
 	printf("%s: Initializing BLE controller\n", __func__);
 

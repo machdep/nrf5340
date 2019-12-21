@@ -31,12 +31,14 @@
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/thread.h>
+#include <sys/ringbuf.h>
 
 #include <arm/arm/nvic.h>
 #include <arm/nordicsemi/nrf5340_net_core.h>
 
 #include <nrfxlib/ble_controller/include/ble_controller.h>
 
+#include "common.h"
 #include "ble.h"
 
 struct arm_nvic_softc nvic_sc;
@@ -45,6 +47,8 @@ struct nrf_spu_softc spu_sc;
 struct nrf_power_softc power_sc;
 struct nrf_timer_softc timer1_sc;
 struct nrf_ipc_softc ipc_sc;
+struct mdx_ringbuf_softc ringbuf_tx_sc;
+struct mdx_ringbuf_softc ringbuf_rx_sc;
 
 #define	UART_PIN_TX	25
 #define	UART_PIN_RX	26
@@ -91,13 +95,6 @@ nrf_egu0_intr(void *arg, struct trapframe *tf, int irq)
 {
 
 	ble_controller_low_prio_tasks_process();
-}
-
-static void
-ble_ipc_intr(void *arg)
-{
-
-	printf("%s\n", __func__);
 }
 
 static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
@@ -162,6 +159,12 @@ app_init(void)
 	nrf_ipc_configure_recv(&ipc_sc, 0, (1 << 0), ble_ipc_intr, NULL);
 	nrf_ipc_inten(&ipc_sc, 0, true);
 
+	mdx_ringbuf_init(&ringbuf_rx_sc,
+	    (void *)RINGBUF_RX_BASE, RINGBUF_RX_BASE_SIZE,
+	    (void *)RINGBUF_RX_BUF, RINGBUF_RX_BUF_SIZE);
+	mdx_ringbuf_join(&ringbuf_tx_sc,
+	    (void *)RINGBUF_TX_BASE);
+
 	return (0);
 }
 
@@ -173,10 +176,8 @@ main(void)
 
 	ble_test();
 
-	while (1) {
+	while (1)
 		mdx_tsleep(2000000);
-		nrf_ipc_trigger(&ipc_sc, 1);
-	}
 
 	return (0);
 }

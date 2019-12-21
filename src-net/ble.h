@@ -28,5 +28,6 @@
 #define	_SRC_BLE_H_
 
 int ble_test(void);
+void ble_ipc_intr(void *arg);
 
 #endif /* !_SRC_BLE_H_ */
