@@ -59,37 +59,37 @@ mdx_sem_t sem;
 #define	ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))
 
 static const struct bt_eir ad[] = {
-        {
-                .len = 2,
-                .type = BT_EIR_FLAGS,
-                .data = { BT_LE_AD_LIMITED | BT_LE_AD_NO_BREDR },
-        },
-        {
-                .len = 7,
-                .type = BT_EIR_UUID16_ALL,
-                .data = { 0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18 },
-        },
-        {
-                .len = 17,
-                .type = BT_EIR_UUID128_ALL,
-                .data = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-                          0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-        },
-        { }
+	{
+		.len = 2,
+		.type = BT_EIR_FLAGS,
+		.data = { BT_LE_AD_LIMITED | BT_LE_AD_NO_BREDR },
+	},
+	{
+		.len = 7,
+		.type = BT_EIR_UUID16_ALL,
+		.data = { 0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18 },
+	},
+	{
+		.len = 17,
+		.type = BT_EIR_UUID128_ALL,
+		.data = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+			  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
+	},
+	{ }
 };
 
 static const struct bt_eir sd[] = {
-        {
-                .len = 6,
-                .type = BT_EIR_NAME_COMPLETE,
-                .data = "mdepx",
-        },
+	{
+		.len = 6,
+		.type = BT_EIR_NAME_COMPLETE,
+		.data = "mdepx",
+	},
 	{
 		.len = 5,
 		.type = BT_EIR_NAME_SHORTENED,
 		.data = "mdep",
 	},
-        { }
+	{ }
 };
 
 static void
@@ -208,14 +208,14 @@ static struct bt_uuid gap_uuid = {
 };
 
 static struct bt_uuid device_name_uuid = {
-        .type = BT_UUID_16,
-        .u16 = BT_UUID_GAP_DEVICE_NAME,
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP_DEVICE_NAME,
 };
  
 static struct bt_gatt_chrc name_chrc = {
-        .properties = BT_GATT_CHRC_READ,
-        .value_handle = 0x0003,
-        .uuid = &device_name_uuid,
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x0003,
+	.uuid = &device_name_uuid,
 };
 
 static const struct bt_gatt_attr attrs[] = {

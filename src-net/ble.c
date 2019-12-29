@@ -116,9 +116,11 @@ ble_send(void *arg)
 		/* Send a backet to BLE controller */
 
 		while ((err = mdx_ringbuf_head(&ringbuf_tx_sc, &rb)) == 0) {
-			//printf("%s: got buf %x *buf %d bufsize %d\n",
-			//    __func__, (int)rb->buf,
-			//    *(volatile uint32_t *)rb->buf, rb->fill);
+#if 0
+			printf("%s: got buf %x *buf %d bufsize %d\n",
+			    __func__, (int)rb->buf,
+			    *(volatile uint32_t *)rb->buf, rb->fill);
+#endif
 			switch (rb->user) {
 			case BT_ACL_OUT:
 				critical_enter();
