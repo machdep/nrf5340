@@ -85,8 +85,10 @@ static struct thread recv_td;
 static struct thread send_td;
 static uint8_t recv_td_stack[2048];
 static uint8_t send_td_stack[2048];
+
 static uint8_t ble_controller_mempool[MEMPOOL_SIZE];
-static mdx_sem_t sem;
+
+static mdx_sem_t sem_recv;
 static mdx_sem_t sem_send;
 static mdx_sem_t sem_thread;
 
@@ -141,7 +143,7 @@ ble_send(void *arg)
 			mdx_ringbuf_submit(&ringbuf_tx_sc);
 		}
 
-		mdx_sem_post(&sem);
+		mdx_sem_post(&sem_recv);
 	}
 }
 
@@ -155,7 +157,7 @@ ble_recv(void *arg)
 	int err;
 
 	while (1) {
-		mdx_sem_timedwait(&sem, 100000);
+		mdx_sem_timedwait(&sem_recv, 100000);
 
 		err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
 		if (err)
@@ -207,7 +209,7 @@ static void
 host_signal(void)
 {
 
-	mdx_sem_post(&sem);
+	mdx_sem_post(&sem_recv);
 }
 
 void
@@ -224,7 +226,7 @@ ble_test(void)
 	struct thread *td;
 	int err;
 
-	mdx_sem_init(&sem, 0);
+	mdx_sem_init(&sem_recv, 0);
 	mdx_sem_init(&sem_send, 0);
 	mdx_sem_init(&sem_thread, 1);
 
