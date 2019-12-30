@@ -52,7 +52,6 @@ extern struct mdx_ringbuf_softc ringbuf_tx_sc;
 extern struct mdx_ringbuf_softc ringbuf_rx_sc;
 
 #define	USEC_TO_TICKS(n)	(n)
-#define	__DECONST(type, var)	((type)(__uintptr_t)(const void *)(var))
 #define	ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))
 
 static struct bt_conn *g_conn;
@@ -192,15 +191,22 @@ static void
 read_cts(struct bt_conn *conn, int err,
 const void *data, uint16_t length)
 {
-	uint8_t *buf;
-	int i;
+	const uint8_t *buf;
+	uint16_t year;
+	uint8_t day, month;
+	uint8_t hours, minutes, seconds;
 
-	buf = __DECONST(uint8_t *, data);
+	buf = (const uint8_t *)data;
 
-	printf("%s: len %d\n", __func__, length);
+	memcpy(&year, buf, 2); /* year */
+	month = buf[2];
+	day = buf[3];
+	hours = buf[4];
+	minutes = buf[5];
+	seconds = buf[6];
 
-	for (i = 0; i < length; i++)
-		printf("data%d: %d\n", i, buf[i]);
+	printf("%s: %d/%d/%d %d:%d:%d\n", __func__,
+	    day, month, year, hours, minutes, seconds);
 }
 
 static uint8_t
