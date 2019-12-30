@@ -88,6 +88,7 @@ static uint8_t send_td_stack[2048];
 static uint8_t ble_controller_mempool[MEMPOOL_SIZE];
 static mdx_sem_t sem;
 static mdx_sem_t sem_send;
+static mdx_sem_t sem_thread;
 
 static void
 print_build_rev(void)
@@ -104,6 +105,8 @@ print_build_rev(void)
 	printf("\n");
 }
 
+/* Send a packet to Bluetooth Controller. */
+
 static void
 ble_send(void *arg)
 {
@@ -113,22 +116,24 @@ ble_send(void *arg)
 	while (1) {
 		mdx_sem_wait(&sem_send);
 
-		/* Send a backet to BLE controller */
+		/* Send a packet to BLE controller */
 
 		while ((err = mdx_ringbuf_head(&ringbuf_tx_sc, &rb)) == 0) {
-			//printf("%s: got buf %x *buf %d bufsize %d\n",
-			//    __func__, (int)rb->buf,
-			//    *(volatile uint32_t *)rb->buf, rb->fill);
+#if 0
+			printf("%s: got buf %x *buf %d bufsize %d\n",
+			    __func__, (int)rb->buf,
+			    *(volatile uint32_t *)rb->buf, rb->fill);
+#endif
 			switch (rb->user) {
 			case BT_ACL_OUT:
-				critical_enter();
+				mdx_sem_wait(&sem_thread);
 				hci_data_put(rb->buf);
-				critical_exit();
+				mdx_sem_post(&sem_thread);
 				break;
 			case BT_CMD:
-				critical_enter();
+				mdx_sem_wait(&sem_thread);
 				hci_cmd_put(rb->buf);
-				critical_exit();
+				mdx_sem_post(&sem_thread);
 				break;
 			default:
 				panic("unknown packet type");
@@ -140,6 +145,8 @@ ble_send(void *arg)
 	}
 }
 
+/* Receive data from Bluetooth Controller. */
+
 static void
 ble_recv(void *arg)
 {
@@ -148,15 +155,15 @@ ble_recv(void *arg)
 	int err;
 
 	while (1) {
-		mdx_sem_wait(&sem);
+		mdx_sem_timedwait(&sem, 100000);
 
 		err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
 		if (err)
 			panic("could not get an entry in the ringbuf");
 
-		critical_enter();
+		mdx_sem_wait(&sem_thread);
 		err = hci_data_get((uint8_t *)rb->buf);
-		critical_exit();
+		mdx_sem_post(&sem_thread);
 		if (err == 0) {
 			hdr = (void *)rb->buf;
 			rb->fill = hdr->len + sizeof(struct bt_hci_acl_hdr);
@@ -169,14 +176,14 @@ ble_recv(void *arg)
 		if (err)
 			panic("could not get an entry in the ringbuf");
 
-		critical_enter();
+		mdx_sem_wait(&sem_thread);
 		err = hci_evt_get((uint8_t *)rb->buf);
-		critical_exit();
+		mdx_sem_post(&sem_thread);
 		if (err == 0) {
 #if 0
 			struct bt_hci_evt_hdr *evt_hdr;
 			evt_hdr = (void *)rb->buf;
-			evt_hdr->len + sizeof(struct bt_hci_evt_hdr);
+			rb->fill = evt_hdr->len + sizeof(struct bt_hci_evt_hdr);
 #else
 			rb->fill = 74;
 #endif
@@ -219,12 +226,13 @@ ble_test(void)
 
 	mdx_sem_init(&sem, 0);
 	mdx_sem_init(&sem_send, 0);
+	mdx_sem_init(&sem_thread, 1);
 
 	td = &recv_td;
 	bzero(td, sizeof(struct thread));
 	td->td_stack = (void *)((uint32_t)recv_td_stack + 2048);
 	td->td_stack_size = 2048;
-	mdx_thread_setup(td, "ble_recv", 1, 100000, ble_recv, NULL);
+	mdx_thread_setup(td, "ble_recv", 1, 10000, ble_recv, NULL);
 	if (td == NULL)
 		panic("Could not create bt recv thread.");
 	mdx_sched_add(td);
@@ -233,7 +241,7 @@ ble_test(void)
 	bzero(td, sizeof(struct thread));
 	td->td_stack = (void *)((uint32_t)send_td_stack + 2048);
 	td->td_stack_size = 2048;
-	mdx_thread_setup(td, "ble_send", 1, 100000, ble_send, NULL);
+	mdx_thread_setup(td, "ble_send", 1, 10000, ble_send, NULL);
 	if (td == NULL)
 		panic("Could not create bt send thread.");
 	mdx_sched_add(td);

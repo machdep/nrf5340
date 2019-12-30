@@ -31,7 +31,6 @@
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/thread.h>
-#include <sys/sem.h>
 #include <sys/ringbuf.h>
 
 #include <bluetooth/bluetooth.h>
@@ -52,44 +51,50 @@ extern struct nrf_ipc_softc ipc_sc;
 extern struct mdx_ringbuf_softc ringbuf_tx_sc;
 extern struct mdx_ringbuf_softc ringbuf_rx_sc;
 
-mdx_sem_t sem;
-
 #define	USEC_TO_TICKS(n)	(n)
-
+#define	__DECONST(type, var)	((type)(__uintptr_t)(const void *)(var))
 #define	ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))
 
+static struct bt_conn *g_conn;
+static struct mdx_callout c;
+static struct bt_gatt_discover_params params;
+static struct bt_uuid lt_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_CTS_CURRENT_TIME,
+};
+
 static const struct bt_eir ad[] = {
-        {
-                .len = 2,
-                .type = BT_EIR_FLAGS,
-                .data = { BT_LE_AD_LIMITED | BT_LE_AD_NO_BREDR },
-        },
-        {
-                .len = 7,
-                .type = BT_EIR_UUID16_ALL,
-                .data = { 0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18 },
-        },
-        {
-                .len = 17,
-                .type = BT_EIR_UUID128_ALL,
-                .data = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-                          0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
-        },
-        { }
+	{
+		.len = 2,
+		.type = BT_EIR_FLAGS,
+		.data = { BT_LE_AD_LIMITED | BT_LE_AD_NO_BREDR },
+	},
+	{
+		.len = 7,
+		.type = BT_EIR_UUID16_ALL,
+		.data = { 0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18 },
+	},
+	{
+		.len = 17,
+		.type = BT_EIR_UUID128_ALL,
+		.data = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+			  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
+	},
+	{ }
 };
 
 static const struct bt_eir sd[] = {
-        {
-                .len = 6,
-                .type = BT_EIR_NAME_COMPLETE,
-                .data = "mdepx",
-        },
+	{
+		.len = 6,
+		.type = BT_EIR_NAME_COMPLETE,
+		.data = "mdepx",
+	},
 	{
 		.len = 5,
 		.type = BT_EIR_NAME_SHORTENED,
 		.data = "mdep",
 	},
-        { }
+	{ }
 };
 
 static void
@@ -184,10 +189,68 @@ static struct bt_driver drv = {
 };
 
 static void
+read_cts(struct bt_conn *conn, int err,
+const void *data, uint16_t length)
+{
+	uint8_t *buf;
+	int i;
+
+	buf = __DECONST(uint8_t *, data);
+
+	printf("%s: len %d\n", __func__, length);
+
+	for (i = 0; i < length; i++)
+		printf("data%d: %d\n", i, buf[i]);
+}
+
+static uint8_t
+discover_func(const struct bt_gatt_attr *attr, void *user_data)
+{
+	uint16_t handle;
+	uint16_t offset;
+	int err;
+
+	/* CTS descriptor found */
+
+	printf("%s: handle 0x%x user_data %p\n",
+	    __func__, attr->handle, user_data);
+
+	handle = attr->handle;
+	offset = 0;
+
+	err = bt_gatt_read(g_conn, handle, offset, read_cts);
+	if (err)
+		printf("%s: err %d\n", __func__, err);
+
+	return (BT_GATT_ITER_STOP);
+}
+
+static void
+discover_cts_descr(void *arg)
+{
+	struct bt_conn *conn;
+	int err;
+
+	conn = arg;
+
+	bzero(&params, sizeof(struct bt_gatt_discover_params));
+	params.uuid = &lt_uuid;
+	params.func = discover_func;
+	params.start_handle = 1;
+	params.end_handle = 0xffff;
+	err = bt_gatt_discover_descriptor(conn, &params);
+	if (err)
+		printf("%s: err %d\n", __func__, err);
+}
+
+static void
 connected(struct bt_conn *conn)
 {
 
-	mdx_sem_post(&sem);
+	g_conn = conn;
+
+	mdx_callout_init(&c);
+	mdx_callout_set(&c, 4000000, discover_cts_descr, conn);
 }
 
 static void
@@ -208,19 +271,19 @@ static struct bt_uuid gap_uuid = {
 };
 
 static struct bt_uuid device_name_uuid = {
-        .type = BT_UUID_16,
-        .u16 = BT_UUID_GAP_DEVICE_NAME,
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP_DEVICE_NAME,
 };
  
 static struct bt_gatt_chrc name_chrc = {
-        .properties = BT_GATT_CHRC_READ,
-        .value_handle = 0x0003,
-        .uuid = &device_name_uuid,
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x0004,
+	.uuid = &device_name_uuid,
 };
 
 static const struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
-	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
+	BT_GATT_PRIMARY_SERVICE(0x0002, &gap_uuid),
+	BT_GATT_CHARACTERISTIC(0x0003, &name_chrc),
 };
 
 int
@@ -228,8 +291,6 @@ ble_test(void)
 {
 	bt_addr_t addr;
 	int err;
-
-	mdx_sem_init(&sem, 0);
 
 	/* Setup ring buffer. */
 	mdx_ringbuf_init(&ringbuf_tx_sc,
