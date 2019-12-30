@@ -277,13 +277,13 @@ static struct bt_uuid device_name_uuid = {
  
 static struct bt_gatt_chrc name_chrc = {
 	.properties = BT_GATT_CHRC_READ,
-	.value_handle = 0x0004,
+	.value_handle = 0x0003,
 	.uuid = &device_name_uuid,
 };
 
 static const struct bt_gatt_attr attrs[] = {
-	BT_GATT_PRIMARY_SERVICE(0x0002, &gap_uuid),
-	BT_GATT_CHARACTERISTIC(0x0003, &name_chrc),
+	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
+	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
 };
 
 int
