@@ -81,10 +81,12 @@ extern struct nrf_ipc_softc ipc_sc;
 extern struct mdx_ringbuf_softc ringbuf_tx_sc;
 extern struct mdx_ringbuf_softc ringbuf_rx_sc;
 
+#define	BLE_STACK_SIZE	4096
+
 static struct thread recv_td;
 static struct thread send_td;
-static uint8_t recv_td_stack[2048];
-static uint8_t send_td_stack[2048];
+static uint8_t recv_td_stack[BLE_STACK_SIZE];
+static uint8_t send_td_stack[BLE_STACK_SIZE];
 
 static uint8_t ble_controller_mempool[MEMPOOL_SIZE];
 
@@ -116,7 +118,7 @@ ble_send(void *arg)
 	int err;
 
 	while (1) {
-		mdx_sem_wait(&sem_send);
+		mdx_sem_timedwait(&sem_send, 100000);
 
 		/* Send a packet to BLE controller */
 
@@ -141,9 +143,8 @@ ble_send(void *arg)
 				panic("unknown packet type");
 			}
 			mdx_ringbuf_submit(&ringbuf_tx_sc);
+			mdx_sem_post(&sem_recv);
 		}
-
-		mdx_sem_post(&sem_recv);
 	}
 }
 
@@ -232,18 +233,18 @@ ble_test(void)
 
 	td = &recv_td;
 	bzero(td, sizeof(struct thread));
-	td->td_stack = (void *)((uint32_t)recv_td_stack + 2048);
-	td->td_stack_size = 2048;
-	mdx_thread_setup(td, "ble_recv", 1, 10000, ble_recv, NULL);
+	td->td_stack = (void *)((uint32_t)recv_td_stack + BLE_STACK_SIZE);
+	td->td_stack_size = BLE_STACK_SIZE;
+	mdx_thread_setup(td, "ble_recv", 1, 100000, ble_recv, NULL);
 	if (td == NULL)
 		panic("Could not create bt recv thread.");
 	mdx_sched_add(td);
 
 	td = &send_td;
 	bzero(td, sizeof(struct thread));
-	td->td_stack = (void *)((uint32_t)send_td_stack + 2048);
-	td->td_stack_size = 2048;
-	mdx_thread_setup(td, "ble_send", 1, 10000, ble_send, NULL);
+	td->td_stack = (void *)((uint32_t)send_td_stack + BLE_STACK_SIZE);
+	td->td_stack_size = BLE_STACK_SIZE;
+	mdx_thread_setup(td, "ble_send", 1, 100000, ble_send, NULL);
 	if (td == NULL)
 		panic("Could not create bt send thread.");
 	mdx_sched_add(td);
