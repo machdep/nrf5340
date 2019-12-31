@@ -138,12 +138,12 @@ ble_send(void *arg)
 				mdx_sem_wait(&sem_thread);
 				hci_cmd_put(rb->buf);
 				mdx_sem_post(&sem_thread);
+				mdx_sem_post(&sem_recv);
 				break;
 			default:
 				panic("unknown packet type");
 			}
 			mdx_ringbuf_submit(&ringbuf_tx_sc);
-			mdx_sem_post(&sem_recv);
 		}
 	}
 }
