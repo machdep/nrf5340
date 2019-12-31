@@ -53,7 +53,7 @@
 #define	USEC_TO_TICKS(n)	(n)
 
 #define	BLE_CONTROLLER_PROCESS_IRQn	ID_EGU0
-#define	BLE_MAX_CONN_EVENT_LEN_DEFAULT	2500
+#define	BLE_MAX_CONN_EVENT_LEN_DEFAULT	7500
 
 #define	MAX_TX_PKT_SIZE BLE_CONTROLLER_DEFAULT_TX_PACKET_SIZE
 #define	MAX_RX_PKT_SIZE BLE_CONTROLLER_DEFAULT_RX_PACKET_SIZE
@@ -118,7 +118,7 @@ ble_send(void *arg)
 	int err;
 
 	while (1) {
-		mdx_sem_timedwait(&sem_send, 100000);
+		mdx_sem_wait(&sem_send);
 
 		/* Send a packet to BLE controller */
 
@@ -150,50 +150,74 @@ ble_send(void *arg)
 
 /* Receive data from Bluetooth Controller. */
 
-static void
-ble_recv(void *arg)
+static int
+handle_hci_input(void)
 {
 	struct bt_hci_acl_hdr *hdr;
 	struct mdx_ringbuf *rb;
 	int err;
 
-	while (1) {
-		mdx_sem_timedwait(&sem_recv, 100000);
+	err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
+	if (err)
+		panic("could not get an entry in the ringbuf");
 
-		err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
-		if (err)
-			panic("could not get an entry in the ringbuf");
+	mdx_sem_wait(&sem_thread);
+	err = hci_data_get((uint8_t *)rb->buf);
+	mdx_sem_post(&sem_thread);
+	if (err == 0) {
+		hdr = (void *)rb->buf;
+		rb->fill = hdr->len + sizeof(struct bt_hci_acl_hdr);
+		rb->user = BT_ACL_IN;
+		mdx_ringbuf_submit(&ringbuf_rx_sc);
+		nrf_ipc_trigger(&ipc_sc, 1);
+		return (1);
+	}
 
-		mdx_sem_wait(&sem_thread);
-		err = hci_data_get((uint8_t *)rb->buf);
-		mdx_sem_post(&sem_thread);
-		if (err == 0) {
-			hdr = (void *)rb->buf;
-			rb->fill = hdr->len + sizeof(struct bt_hci_acl_hdr);
-			rb->user = BT_ACL_IN;
-			mdx_ringbuf_submit(&ringbuf_rx_sc);
-			nrf_ipc_trigger(&ipc_sc, 1);
-		}
+	return (0);
+}
 
-		err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
-		if (err)
-			panic("could not get an entry in the ringbuf");
+static int
+handle_evt_input(void)
+{
+	struct mdx_ringbuf *rb;
+	int err;
 
-		mdx_sem_wait(&sem_thread);
-		err = hci_evt_get((uint8_t *)rb->buf);
-		mdx_sem_post(&sem_thread);
-		if (err == 0) {
+	err = mdx_ringbuf_head(&ringbuf_rx_sc, &rb);
+	if (err)
+		panic("could not get an entry in the ringbuf");
+
+	mdx_sem_wait(&sem_thread);
+	err = hci_evt_get((uint8_t *)rb->buf);
+	mdx_sem_post(&sem_thread);
+	if (err == 0) {
 #if 0
-			struct bt_hci_evt_hdr *evt_hdr;
-			evt_hdr = (void *)rb->buf;
-			rb->fill = evt_hdr->len + sizeof(struct bt_hci_evt_hdr);
+		struct bt_hci_evt_hdr *evt_hdr;
+		evt_hdr = (void *)rb->buf;
+		rb->fill = evt_hdr->len + sizeof(struct bt_hci_evt_hdr);
 #else
-			rb->fill = 74;
+		rb->fill = 74;
 #endif
-			rb->user = BT_EVT;
-			mdx_ringbuf_submit(&ringbuf_rx_sc);
-			nrf_ipc_trigger(&ipc_sc, 1);
-		}
+		rb->user = BT_EVT;
+		mdx_ringbuf_submit(&ringbuf_rx_sc);
+		nrf_ipc_trigger(&ipc_sc, 1);
+		return (1);
+	}
+
+	return (0);
+}
+
+static void
+ble_recv(void *arg)
+{
+	int err1, err2;
+
+	while (1) {
+		mdx_sem_wait(&sem_recv);
+
+		do {
+			err1 = handle_hci_input();
+			err2 = handle_evt_input();
+		} while (err1 || err2);
 	}
 }
 
