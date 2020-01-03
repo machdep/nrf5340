@@ -218,6 +218,8 @@ ble_recv(void *arg)
 			err1 = handle_hci_input();
 			err2 = handle_evt_input();
 		} while (err1 || err2);
+
+		mdx_sched_yield();
 	}
 }
 
@@ -259,7 +261,10 @@ ble_test(void)
 	bzero(td, sizeof(struct thread));
 	td->td_stack = (void *)((uint32_t)recv_td_stack + BLE_STACK_SIZE);
 	td->td_stack_size = BLE_STACK_SIZE;
-	mdx_thread_setup(td, "ble_recv", 1, 100000, ble_recv, NULL);
+	mdx_thread_setup(td, "ble_recv",
+			1, /* prio */
+			0, /* quantum */
+			ble_recv, NULL);
 	if (td == NULL)
 		panic("Could not create bt recv thread.");
 	mdx_sched_add(td);
@@ -268,7 +273,10 @@ ble_test(void)
 	bzero(td, sizeof(struct thread));
 	td->td_stack = (void *)((uint32_t)send_td_stack + BLE_STACK_SIZE);
 	td->td_stack_size = BLE_STACK_SIZE;
-	mdx_thread_setup(td, "ble_send", 1, 100000, ble_send, NULL);
+	mdx_thread_setup(td, "ble_send",
+			1, /* prio */
+			0, /* quantum */
+			ble_send, NULL);
 	if (td == NULL)
 		panic("Could not create bt send thread.");
 	mdx_sched_add(td);
