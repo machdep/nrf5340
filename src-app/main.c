@@ -119,6 +119,9 @@ main(void)
 
 	printf("Hello world!\n");
 
+	/* Give some time for the NET core to startup. */
+	mdx_tsleep(500000);
+
 	ble_test();
 
 	while (1)
