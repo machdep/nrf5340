@@ -259,7 +259,7 @@ ble_test(void)
 
 	td = &recv_td;
 	bzero(td, sizeof(struct thread));
-	td->td_stack = (void *)((uint32_t)recv_td_stack + BLE_STACK_SIZE);
+	td->td_stack = (void *)((uint32_t)recv_td_stack);
 	td->td_stack_size = BLE_STACK_SIZE;
 	mdx_thread_setup(td, "ble_recv",
 			1, /* prio */
@@ -271,7 +271,7 @@ ble_test(void)
 
 	td = &send_td;
 	bzero(td, sizeof(struct thread));
-	td->td_stack = (void *)((uint32_t)send_td_stack + BLE_STACK_SIZE);
+	td->td_stack = (void *)((uint32_t)send_td_stack);
 	td->td_stack_size = BLE_STACK_SIZE;
 	mdx_thread_setup(td, "ble_send",
 			1, /* prio */
