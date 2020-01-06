@@ -4,13 +4,21 @@ This is a demo for Bluetooth LE on nRF5340.
 Nordic libble controller s140 is used in this demo.
 
 Current status: advertising, establishing connection and pairing works fine. Re-pair after successful pair/unpair works fine too.
+
+Bluetooth LE supported only.
 Tested with Xiaomi MI9 Lite (android), not tested with iPhones.
-This application requests current time from android using CTS profile.
-Install nRF Connect application to android and setup CTS GATT service to enable (androids do not have it by default).
+
+This application requests current time from android using bluetooth CTS (current time service) profile.
+
+GATT CTS is provided by nRF Connect application for Android
+(install it as androids do not have built-in CTS).
 
 BLE host-layer library is included to the main core app, Nordic link-layer library has set up on the network core.
 
 Nordicsemi nRF5340 is a dual-core ARM Cortex-M33.
+Network core is reserved entirely for real-time (bluetooth link) control. Application core is available for your code.
+
+Ring-buffer (in shared SRAM memory) has been established between two cores. It is used for transmitting HCI commands between bluetooth HCI library (mdepx/lib/bluetooth) and libble controller s140.
 
 For nRF5340-DK (application core) connect micro usb cable to J2, for other boards connect UART pins as follows:
 
@@ -28,7 +36,7 @@ Network MCU has separate UART:
 
 UART baud rate: 115200
 
-Plug Segger JLINK adapter to nRF5340-DK 'Debug in' connector.
+Use on-board debugger or plug Segger JLINK adapter to nRF5340-DK 'Debug in' connector.
 
 This app depends on the [secure bootloader for nRF5340](https://github.com/machdep/nrf-boot).
 
