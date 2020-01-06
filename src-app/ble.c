@@ -253,6 +253,8 @@ static void
 connected(struct bt_conn *conn)
 {
 
+	printf("%s\n", __func__);
+
 	g_conn = conn;
 
 	mdx_callout_init(&c);
@@ -263,7 +265,7 @@ static void
 disconnected(struct bt_conn *conn)
 {
 
-	printf("disconnected\n");
+	printf("%s\n", __func__);
 }
 
 static struct bt_conn_cb conn_callbacks = {
