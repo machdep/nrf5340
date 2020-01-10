@@ -44,6 +44,7 @@ struct nrf_spu_softc spu_sc;
 struct nrf_power_softc power_sc;
 struct nrf_timer_softc timer0_sc;
 struct nrf_ipc_softc ipc_sc;
+struct nrf_rtc_softc rtc_sc;
 struct mdx_ringbuf_softc ringbuf_tx_sc;
 struct mdx_ringbuf_softc ringbuf_rx_sc;
 
@@ -56,6 +57,7 @@ static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
 	[ID_UARTE0] = { nrf_uarte_intr, &uarte_sc },
 	[ID_TIMER0] = { nrf_timer_intr, &timer0_sc },
 	[ID_IPC]    = { nrf_ipc_intr, &ipc_sc },
+	[ID_RTC1]   = { nrf_rtc_intr, &rtc_sc },
 };
 
 static void
@@ -93,6 +95,7 @@ app_init(void)
 
 	nrf_power_init(&power_sc, NRF_POWER);
 	nrf_ipc_init(&ipc_sc, NRF_IPC);
+	nrf_rtc_init(&rtc_sc, NRF_RTC1, 0 /* prescaler */);
 
 	arm_nvic_init(&nvic_sc, BASE_SCS);
 	arm_nvic_install_intr_map(&nvic_sc, intr_map);
@@ -102,6 +105,9 @@ app_init(void)
 	arm_nvic_enable_intr(&nvic_sc, ID_TIMER0);
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
 	arm_nvic_enable_intr(&nvic_sc, ID_IPC);
+	arm_nvic_enable_intr(&nvic_sc, ID_RTC1);
+
+	mdx_clock_register(CLOCK_REALTIME, &nrf_rtc_driver, &rtc_sc);
 
 	/* Receive event 1 on channel 1 */
 	nrf_ipc_configure_recv(&ipc_sc, 1, (1 << 1), ble_ipc_intr, NULL);

@@ -32,6 +32,9 @@
 #include <sys/mbuf.h>
 #include <sys/thread.h>
 #include <sys/ringbuf.h>
+#include <sys/time.h>
+
+#include <time.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
@@ -189,24 +192,44 @@ static struct bt_driver drv = {
 
 static void
 read_cts(struct bt_conn *conn, int err,
-const void *data, uint16_t length)
+    const void *data, uint16_t length)
 {
+	struct tm tm;
 	const uint8_t *buf;
+	struct timespec ts;
 	uint16_t year;
-	uint8_t day, month;
-	uint8_t hours, minutes, seconds;
+	time_t t;
 
 	buf = (const uint8_t *)data;
 
 	memcpy(&year, buf, 2); /* year */
-	month = buf[2];
-	day = buf[3];
-	hours = buf[4];
-	minutes = buf[5];
-	seconds = buf[6];
+	tm.tm_year = year - 1900;
+	tm.tm_mon = buf[2] - 1;
+	tm.tm_mday = buf[3];
+	tm.tm_hour = buf[4];
+	tm.tm_min = buf[5];
+	tm.tm_sec = buf[6];
 
-	printf("%s: %d/%d/%d %d:%d:%d\n", __func__,
-	    day, month, year, hours, minutes, seconds);
+	t = mktime(&tm);
+
+	printf("current time %d\n", t);
+
+	ts.tv_sec = t;
+	ts.tv_nsec = 0;
+
+	mdx_clock_settime(CLOCK_REALTIME, &ts);
+
+	bzero(&tm, sizeof(struct tm));
+	while (1) {
+		mdx_clock_gettime(CLOCK_REALTIME, &ts);
+		gmtime_r(&ts.tv_sec, &tm);
+
+		printf("%s: %d/%d/%d %d:%d:%d\n", __func__,
+		    tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900,
+		    tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+		mdx_tsleep(1000000);
+	}
 }
 
 static uint8_t
