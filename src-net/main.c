@@ -53,7 +53,6 @@ struct mdx_ringbuf_softc ringbuf_rx_sc;
 #define	UART_PIN_TX	25
 #define	UART_PIN_RX	26
 #define	UART_BAUDRATE	115200
-#define	NVIC_NINTRS	128
 
 static void
 ble_rng_intr(void *arg, struct trapframe *tf, int irq)
@@ -97,18 +96,6 @@ nrf_egu0_intr(void *arg, struct trapframe *tf, int irq)
 	ble_controller_low_prio_tasks_process();
 }
 
-static const struct nvic_intr_entry intr_map[NVIC_NINTRS] = {
-	[ID_UARTE0] = { nrf_uarte_intr, &uarte_sc },
-	[ID_EGU0]   = { nrf_egu0_intr, &uarte_sc },
-	[ID_RNG]    = { ble_rng_intr, NULL },
-	[ID_TIMER0] = { ble_timer_intr, NULL },
-	[ID_TIMER1] = { nrf_timer_intr, &timer1_sc },
-	[ID_RADIO]  = { ble_radio_intr, NULL },
-	[ID_RTC0]   = { ble_rtc_intr, NULL },
-	[ID_POWER]  = { ble_power_intr, NULL },
-	[ID_IPC]    = { nrf_ipc_intr, &ipc_sc },
-};
-
 static void
 uart_putchar(int c, void *arg)
 {
@@ -139,14 +126,22 @@ board_init(void)
 
 	printf("mdepx initialized\n");
 
+	nrf_timer_init(&timer1_sc, NRF_TIMER1);
 	nrf_power_init(&power_sc, NRF_POWER);
 	nrf_ipc_init(&ipc_sc, NRF_IPC);
 
 	arm_nvic_init(&nvic_sc, BASE_SCS);
-	arm_nvic_install_intr_map(&nvic_sc, intr_map);
-	arm_nvic_set_prio(&nvic_sc, ID_IPC, 6);
 
-	nrf_timer_init(&timer1_sc, NRF_TIMER1);
+	arm_nvic_route_intr(&nvic_sc, ID_UARTE0, nrf_uarte_intr, &uarte_sc);
+	arm_nvic_route_intr(&nvic_sc, ID_EGU0,   nrf_egu0_intr,  NULL);
+	arm_nvic_route_intr(&nvic_sc, ID_RNG,    ble_rng_intr,   NULL);
+	arm_nvic_route_intr(&nvic_sc, ID_TIMER0, ble_timer_intr, NULL);
+	arm_nvic_route_intr(&nvic_sc, ID_TIMER1, nrf_timer_intr, &timer1_sc);
+	arm_nvic_route_intr(&nvic_sc, ID_RADIO,  ble_radio_intr, NULL);
+	arm_nvic_route_intr(&nvic_sc, ID_RTC0,   ble_rtc_intr,   NULL);
+	arm_nvic_route_intr(&nvic_sc, ID_POWER,  ble_power_intr, NULL);
+	arm_nvic_route_intr(&nvic_sc, ID_IPC,    nrf_ipc_intr,   &ipc_sc);
+
 	arm_nvic_enable_intr(&nvic_sc, ID_TIMER1);
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
 	arm_nvic_enable_intr(&nvic_sc, ID_EGU0);
