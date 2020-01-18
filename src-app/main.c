@@ -79,8 +79,8 @@ nrf_input(int c, void *arg)
 
 }
 
-int
-app_init(void)
+void
+board_init(void)
 {
 
 	nrf_uarte_init(&uarte_sc, NRF_UARTE0,
@@ -115,8 +115,6 @@ app_init(void)
 
 	/* Send event 0 to channel 0 */
 	nrf_ipc_configure_send(&ipc_sc, 0, (1 << 0));
-
-	return (0);
 }
 
 int

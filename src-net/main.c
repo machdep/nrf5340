@@ -128,8 +128,8 @@ nrf_input(int c, void *arg)
 
 }
 
-int
-app_init(void)
+void
+board_init(void)
 {
 
 	nrf_uarte_init(&uarte_sc, NRF_UARTE0,
@@ -164,8 +164,6 @@ app_init(void)
 	    (void *)RINGBUF_RX_BUF, RINGBUF_RX_BUF_SIZE);
 	mdx_ringbuf_join(&ringbuf_tx_sc,
 	    (void *)RINGBUF_TX_BASE);
-
-	return (0);
 }
 
 int

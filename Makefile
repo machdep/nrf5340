@@ -4,8 +4,7 @@ OSDIR = mdepx
 
 CMD = python3 -B ${OSDIR}/tools/emitter.py
 
-all:
-	@echo Run make app or make net
+all:	app net
 
 app:
 	@${CMD} mdepx-app.conf
