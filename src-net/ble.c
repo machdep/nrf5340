@@ -295,7 +295,7 @@ ble_test(void)
 	print_build_rev();
 
 	bzero(&clock_cfg, sizeof(mpsl_clock_lfclk_cfg_t));
-	clock_cfg.accuracy_ppm = MPSL_DEFAULT_CLOCK_ACCURACY_PPM;
+	clock_cfg.accuracy_ppm = 500;
 
 #if 1
 	clock_cfg.source = MPSL_CLOCK_LF_SRC_XTAL;
