@@ -47,6 +47,8 @@
 
 #include <nrfxlib/ble_controller/include/ble_controller.h>
 #include <nrfxlib/ble_controller/include/ble_controller_hci.h>
+#include <nrfxlib/mpsl/include/mpsl.h>
+#include <nrfxlib/mpsl/include/mpsl_clock.h>
 
 #include "ble.h"
 
@@ -224,6 +226,15 @@ ble_recv(void *arg)
 }
 
 static void
+ble_controller_fault_handler(const char * file, const uint32_t line)
+{
+
+	printf("%s: %s:%d\n", __func__, file, line);
+
+	while (1);
+}
+
+static void
 ble_assertion_handler(const char *const file, const uint32_t line)
 {
 
@@ -249,7 +260,7 @@ ble_ipc_intr(void *arg)
 int
 ble_test(void)
 {
-	nrf_lf_clock_cfg_t clock_cfg;
+	mpsl_clock_lfclk_cfg_t clock_cfg;
 	struct thread *td;
 	int err;
 
@@ -283,22 +294,22 @@ ble_test(void)
 
 	print_build_rev();
 
-	bzero(&clock_cfg, sizeof(nrf_lf_clock_cfg_t));
-	clock_cfg.accuracy = NRF_LF_CLOCK_ACCURACY_500_PPM;
+	bzero(&clock_cfg, sizeof(mpsl_clock_lfclk_cfg_t));
+	clock_cfg.accuracy_ppm = MPSL_DEFAULT_CLOCK_ACCURACY_PPM;
 
 #if 1
-	clock_cfg.lf_clk_source = NRF_LF_CLOCK_SRC_XTAL;
+	clock_cfg.source = MPSL_CLOCK_LF_SRC_XTAL;
 #else
-	clock_cfg.lf_clk_source = NRF_LF_CLOCK_SRC_RC;
-	clock_cfg.rc_ctiv = BLE_CONTROLLER_RECOMMENDED_RC_CTIV;
-	clock_cfg.rc_temp_ctiv = BLE_CONTROLLER_RECOMMENDED_RC_TEMP_CTIV;
+	clock_cfg.source = MPSL_CLOCK_LF_SRC_RC;
+	clock_cfg.rc_ctiv = MPSL_RECOMMENDED_RC_CTIV;
+	clock_cfg.rc_temp_ctiv = MPSL_RECOMMENDED_RC_TEMP_CTIV;
 #endif
 
 	printf("%s: Initializing BLE controller\n", __func__);
 
-	err = ble_controller_init(ble_assertion_handler,
-	    &clock_cfg,
-	    BLE_CONTROLLER_PROCESS_IRQn);
+	mpsl_init(&clock_cfg, BLE_CONTROLLER_PROCESS_IRQn,
+	    ble_assertion_handler);
+	err = ble_controller_init(ble_controller_fault_handler);
 
 	if (err != 0) {
 		printf("%s: Failed to initialize BLE controller, error %d\n",

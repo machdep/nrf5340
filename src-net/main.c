@@ -37,6 +37,7 @@
 #include <arm/nordicsemi/nrf5340_net_core.h>
 
 #include <nrfxlib/ble_controller/include/ble_controller.h>
+#include <nrfxlib/mpsl/include/mpsl.h>
 
 #include "common.h"
 #include "ble.h"
@@ -65,35 +66,35 @@ static void
 ble_timer_intr(void *arg, struct trapframe *tf, int irq)
 {
 
-	ble_controller_TIMER0_IRQHandler();
+	MPSL_IRQ_TIMER0_Handler();
 }
 
 static void
 ble_radio_intr(void *arg, struct trapframe *tf, int irq)
 {
 
-	ble_controller_RADIO_IRQHandler();
+	MPSL_IRQ_RADIO_Handler();
 }
 
 static void
 ble_rtc_intr(void *arg, struct trapframe *tf, int irq)
 {
 
-	ble_controller_RTC0_IRQHandler();
+	MPSL_IRQ_RTC0_Handler();
 }
 
 static void
 ble_power_intr(void *arg, struct trapframe *tf, int irq)
 {
 
-	ble_controller_POWER_CLOCK_IRQHandler();
+	MPSL_IRQ_CLOCK_Handler();
 }
 
 static void
 nrf_egu0_intr(void *arg, struct trapframe *tf, int irq)
 {
 
-	ble_controller_low_prio_tasks_process();
+	mpsl_low_priority_process();
 }
 
 static void
@@ -132,15 +133,15 @@ board_init(void)
 
 	arm_nvic_init(&nvic_sc, BASE_SCS);
 
-	arm_nvic_route_intr(&nvic_sc, ID_UARTE0, nrf_uarte_intr, &uarte_sc);
-	arm_nvic_route_intr(&nvic_sc, ID_EGU0,   nrf_egu0_intr,  NULL);
-	arm_nvic_route_intr(&nvic_sc, ID_RNG,    ble_rng_intr,   NULL);
-	arm_nvic_route_intr(&nvic_sc, ID_TIMER0, ble_timer_intr, NULL);
-	arm_nvic_route_intr(&nvic_sc, ID_TIMER1, nrf_timer_intr, &timer1_sc);
-	arm_nvic_route_intr(&nvic_sc, ID_RADIO,  ble_radio_intr, NULL);
-	arm_nvic_route_intr(&nvic_sc, ID_RTC0,   ble_rtc_intr,   NULL);
-	arm_nvic_route_intr(&nvic_sc, ID_POWER,  ble_power_intr, NULL);
-	arm_nvic_route_intr(&nvic_sc, ID_IPC,    nrf_ipc_intr,   &ipc_sc);
+	arm_nvic_setup_intr(&nvic_sc, ID_UARTE0, nrf_uarte_intr, &uarte_sc);
+	arm_nvic_setup_intr(&nvic_sc, ID_EGU0,   nrf_egu0_intr,  NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_RNG,    ble_rng_intr,   NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_TIMER0, ble_timer_intr, NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_TIMER1, nrf_timer_intr, &timer1_sc);
+	arm_nvic_setup_intr(&nvic_sc, ID_RADIO,  ble_radio_intr, NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_RTC0,   ble_rtc_intr,   NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_POWER,  ble_power_intr, NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_IPC,    nrf_ipc_intr,   &ipc_sc);
 
 	arm_nvic_enable_intr(&nvic_sc, ID_TIMER1);
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
