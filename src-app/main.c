@@ -96,7 +96,7 @@ board_init(void)
 
 	arm_nvic_set_prio(&nvic_sc, ID_IPC, 6);
 
-	nrf_timer_init(&timer0_sc, NRF_TIMER0);
+	nrf_timer_init(&timer0_sc, NRF_TIMER0, 1000000);
 	arm_nvic_enable_intr(&nvic_sc, ID_TIMER0);
 	arm_nvic_enable_intr(&nvic_sc, ID_UARTE0);
 	arm_nvic_enable_intr(&nvic_sc, ID_IPC);
@@ -121,12 +121,12 @@ main(void)
 	printf("Hello world!\n");
 
 	/* Give some time for the NET core to startup. */
-	mdx_tsleep(500000);
+	mdx_usleep(500000);
 
 	ble_test();
 
 	while (1)
-		mdx_tsleep(2000000);
+		mdx_usleep(2000000);
 
 	return (0);
 }

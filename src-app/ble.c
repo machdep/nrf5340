@@ -54,7 +54,6 @@ extern struct nrf_ipc_softc ipc_sc;
 extern struct mdx_ringbuf_softc ringbuf_tx_sc;
 extern struct mdx_ringbuf_softc ringbuf_rx_sc;
 
-#define	USEC_TO_TICKS(n)	(n)
 #define	ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))
 
 static struct bt_conn *g_conn;

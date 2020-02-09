@@ -52,8 +52,6 @@
 
 #include "ble.h"
 
-#define	USEC_TO_TICKS(n)	(n)
-
 #define	BLE_CONTROLLER_PROCESS_IRQn	ID_EGU0
 #define	BLE_MAX_CONN_EVENT_LEN_DEFAULT	7500
 
@@ -221,7 +219,7 @@ ble_recv(void *arg)
 			err2 = handle_evt_input();
 		} while (err1 || err2);
 
-		mdx_sched_yield();
+		mdx_thread_yield();
 	}
 }
 

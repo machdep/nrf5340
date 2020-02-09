@@ -127,7 +127,7 @@ board_init(void)
 
 	printf("mdepx initialized\n");
 
-	nrf_timer_init(&timer1_sc, NRF_TIMER1);
+	nrf_timer_init(&timer1_sc, NRF_TIMER1, 1000000);
 	nrf_power_init(&power_sc, NRF_POWER);
 	nrf_ipc_init(&ipc_sc, NRF_IPC);
 
@@ -171,7 +171,7 @@ main(void)
 	ble_test();
 
 	while (1)
-		mdx_tsleep(2000000);
+		mdx_usleep(2000000);
 
 	return (0);
 }
