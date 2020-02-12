@@ -90,19 +90,11 @@ nrf_egu0_intr(void *arg, struct trapframe *tf, int irq)
 	mpsl_low_priority_process();
 }
 
-int
-main(void)
+static void
+config_ipc(void)
 {
 
 	nrf_ipc_init(&ipc_sc, NRF_IPC);
-
-	arm_nvic_setup_intr(&nvic_sc, ID_EGU0,   nrf_egu0_intr,  NULL);
-	arm_nvic_setup_intr(&nvic_sc, ID_RNG,    ble_rng_intr,   NULL);
-	arm_nvic_setup_intr(&nvic_sc, ID_TIMER0, ble_timer_intr, NULL);
-	arm_nvic_setup_intr(&nvic_sc, ID_RADIO,  ble_radio_intr, NULL);
-	arm_nvic_setup_intr(&nvic_sc, ID_RTC0,   ble_rtc_intr,   NULL);
-	arm_nvic_setup_intr(&nvic_sc, ID_POWER,  ble_power_intr, NULL);
-	arm_nvic_setup_intr(&nvic_sc, ID_IPC,    nrf_ipc_intr,   &ipc_sc);
 
 	/* Send event 1 to channel 1 */
 	nrf_ipc_configure_send(&ipc_sc, 1, (1 << 1));
@@ -111,13 +103,29 @@ main(void)
 	nrf_ipc_configure_recv(&ipc_sc, 0, (1 << 0), ble_ipc_intr, NULL);
 	nrf_ipc_inten(&ipc_sc, 0, true);
 
+	arm_nvic_setup_intr(&nvic_sc, ID_IPC, nrf_ipc_intr, &ipc_sc);
+}
+
+int
+main(void)
+{
+
+	printf("Hello world!\n");
+
+	config_ipc();
+
+	arm_nvic_setup_intr(&nvic_sc, ID_EGU0,   nrf_egu0_intr,  NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_RNG,    ble_rng_intr,   NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_TIMER0, ble_timer_intr, NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_RADIO,  ble_radio_intr, NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_RTC0,   ble_rtc_intr,   NULL);
+	arm_nvic_setup_intr(&nvic_sc, ID_POWER,  ble_power_intr, NULL);
+
 	mdx_ringbuf_init(&ringbuf_rx_sc,
 	    (void *)RINGBUF_RX_BASE, RINGBUF_RX_BASE_SIZE,
 	    (void *)RINGBUF_RX_BUF, RINGBUF_RX_BUF_SIZE);
 	mdx_ringbuf_join(&ringbuf_tx_sc,
 	    (void *)RINGBUF_TX_BASE);
-
-	printf("Hello world!\n");
 
 	ble_test();
 

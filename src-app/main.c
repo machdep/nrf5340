@@ -44,11 +44,12 @@ struct mdx_ringbuf_softc ringbuf_rx_sc;
 
 #include "ble.h"
 
-int
-main(void)
+static void
+ipc_config(void)
 {
+
 	nrf_ipc_init(&ipc_sc, NRF_IPC);
-	arm_nvic_setup_intr(&nvic_sc, ID_IPC,    nrf_ipc_intr,   &ipc_sc);
+	arm_nvic_setup_intr(&nvic_sc, ID_IPC, nrf_ipc_intr, &ipc_sc);
 
 	/* Receive event 1 on channel 1 */
 	nrf_ipc_configure_recv(&ipc_sc, 1, (1 << 1), ble_ipc_intr, NULL);
@@ -56,8 +57,15 @@ main(void)
 
 	/* Send event 0 to channel 0 */
 	nrf_ipc_configure_send(&ipc_sc, 0, (1 << 0));
+}
+
+int
+main(void)
+{
 
 	printf("Hello world!\n");
+
+	ipc_config();
 
 	/* Give some time for the NET core to startup. */
 	mdx_usleep(500000);
