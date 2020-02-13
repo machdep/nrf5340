@@ -270,23 +270,23 @@ ble_test(void)
 	bzero(td, sizeof(struct thread));
 	td->td_stack = (void *)((uint32_t)recv_td_stack);
 	td->td_stack_size = BLE_STACK_SIZE;
-	mdx_thread_setup(td, "ble_recv",
-			1, /* prio */
+	err = mdx_thread_setup(td, "ble_recv",
+			1, /* priority */
 			0, /* quantum */
 			ble_recv, NULL);
-	if (td == NULL)
-		panic("Could not create bt recv thread.");
+	if (err)
+		panic("Could not setup bt recv thread.");
 	mdx_sched_add(td);
 
 	td = &send_td;
 	bzero(td, sizeof(struct thread));
 	td->td_stack = (void *)((uint32_t)send_td_stack);
 	td->td_stack_size = BLE_STACK_SIZE;
-	mdx_thread_setup(td, "ble_send",
-			1, /* prio */
+	err = mdx_thread_setup(td, "ble_send",
+			1, /* priority */
 			0, /* quantum */
 			ble_send, NULL);
-	if (td == NULL)
+	if (err)
 		panic("Could not create bt send thread.");
 	mdx_sched_add(td);
 
