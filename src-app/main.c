@@ -48,7 +48,7 @@ static void
 ipc_config(void)
 {
 
-	nrf_ipc_init(&ipc_sc, NRF_IPC);
+	nrf_ipc_init(&ipc_sc, BASE_IPC);
 	arm_nvic_setup_intr(&nvic_sc, ID_IPC, nrf_ipc_intr, &ipc_sc);
 
 	/* Receive event 1 on channel 1 */
@@ -64,6 +64,17 @@ main(void)
 {
 
 	printf("Hello world!\n");
+
+#if 0
+	double a;
+	double b;
+	double d;
+
+	a = 0.12;
+	b = 0.13;
+	d = a + b;
+	printf("d is %.2f\n", d);
+#endif
 
 	ipc_config();
 

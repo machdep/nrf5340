@@ -94,7 +94,7 @@ static void
 config_ipc(void)
 {
 
-	nrf_ipc_init(&ipc_sc, NRF_IPC);
+	nrf_ipc_init(&ipc_sc, BASE_IPC);
 
 	/* Send event 1 to channel 1 */
 	nrf_ipc_configure_send(&ipc_sc, 1, (1 << 1));
