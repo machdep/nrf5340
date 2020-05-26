@@ -1,7 +1,8 @@
 MEMORY
 {
-	flash   (rx)  : ORIGIN = 0x01000000, LENGTH = 256K
-	sram0   (rwx) : ORIGIN = 0x21000000, LENGTH = 64K
+	flash   (rx)  : ORIGIN = 0x01000000, LENGTH = 256K - 0x4000
+	sram0   (rwx) : ORIGIN = 0x21000000, LENGTH = 48K
+	sram1   (rwx) : ORIGIN = 0x2100c000, LENGTH = 16K /* malloc */
 }
 
 ENTRY(md_init)
@@ -15,6 +16,12 @@ SECTIONS
 	.text : {
 		*(.exception);
 		*(.text*);
+	} > flash
+
+	.sysinit : {
+		__sysinit_start = ABSOLUTE(.);
+		*(.sysinit)
+		__sysinit_end = ABSOLUTE(.);
 	} > flash
 
 	.rodata : {
