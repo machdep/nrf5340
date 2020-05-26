@@ -171,7 +171,13 @@ bt_send(struct bt_buf *buf)
 	mdx_ringbuf_submit(&ringbuf_tx_sc);
 
 	/* Notify network core. */
-	nrf_ipc_trigger(&ipc_sc, 0);
+	mdx_device_t dev;
+
+	dev = mdx_device_lookup_by_name("nrf_ipc", 0);
+	if (dev == NULL)
+		panic("could not find ipc device");
+
+	nrf_ipc_trigger(dev, 0);
 
 	return (0);
 }

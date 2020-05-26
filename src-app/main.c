@@ -33,9 +33,10 @@
 #include <sys/thread.h>
 #include <sys/ringbuf.h>
 
+#include <dev/intc/intc.h>
+
 extern struct arm_nvic_softc nvic_sc;
 
-struct nrf_ipc_softc ipc_sc;
 struct mdx_ringbuf_softc ringbuf_tx_sc;
 struct mdx_ringbuf_softc ringbuf_rx_sc;
 
@@ -47,16 +48,23 @@ struct mdx_ringbuf_softc ringbuf_rx_sc;
 static void
 ipc_config(void)
 {
+	mdx_device_t nvic;
+	mdx_device_t ipc;
 
-	nrf_ipc_init(&ipc_sc, BASE_IPC);
-	arm_nvic_setup_intr(&nvic_sc, ID_IPC, nrf_ipc_intr, &ipc_sc);
+	nvic = mdx_device_lookup_by_name("nvic", 0);
+	if (nvic == NULL)
+		panic("could not find nvic device");
+
+	ipc = mdx_device_lookup_by_name("nrf_ipc", 0);
+	if (ipc == NULL)
+		panic("could not find ipc device");
 
 	/* Receive event 1 on channel 1 */
-	nrf_ipc_configure_recv(&ipc_sc, 1, (1 << 1), ble_ipc_intr, NULL);
-	nrf_ipc_inten(&ipc_sc, 1, true);
+	nrf_ipc_configure_recv(ipc, 1, (1 << 1), ble_ipc_intr, NULL);
+	nrf_ipc_inten(ipc, 1, true);
 
 	/* Send event 0 to channel 0 */
-	nrf_ipc_configure_send(&ipc_sc, 0, (1 << 0));
+	nrf_ipc_configure_send(ipc, 0, (1 << 0));
 }
 
 int

@@ -77,7 +77,8 @@
 #define MEMPOOL_SIZE ((BLE_SLAVE_COUNT * SLAVE_MEM_SIZE) +	\
 	(BLE_MASTER_COUNT * MASTER_MEM_SIZE))
 
-extern struct nrf_ipc_softc ipc_sc;
+mdx_device_t ipc;
+
 extern struct mdx_ringbuf_softc ringbuf_tx_sc;
 extern struct mdx_ringbuf_softc ringbuf_rx_sc;
 
@@ -169,7 +170,7 @@ handle_hci_input(void)
 		rb->fill = hdr->len + sizeof(struct bt_hci_acl_hdr);
 		rb->user = BT_ACL_IN;
 		mdx_ringbuf_submit(&ringbuf_rx_sc);
-		nrf_ipc_trigger(&ipc_sc, 1);
+		nrf_ipc_trigger(ipc, 1);
 		return (1);
 	}
 
@@ -199,7 +200,7 @@ handle_evt_input(void)
 #endif
 		rb->user = BT_EVT;
 		mdx_ringbuf_submit(&ringbuf_rx_sc);
-		nrf_ipc_trigger(&ipc_sc, 1);
+		nrf_ipc_trigger(ipc, 1);
 		return (1);
 	}
 
@@ -265,6 +266,10 @@ ble_test(void)
 	mdx_sem_init(&sem_recv, 0);
 	mdx_sem_init(&sem_send, 0);
 	mdx_sem_init(&sem_thread, 1);
+
+	ipc = mdx_device_lookup_by_name("nrf_ipc", 0);
+	if (ipc == NULL)
+		panic("could not find ipc device");
 
 	td = &recv_td;
 	bzero(td, sizeof(struct thread));
