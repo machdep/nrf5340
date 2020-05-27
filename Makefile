@@ -46,6 +46,9 @@ flash-net:
 	nrfjprog -f NRF53 --coprocessor CP_NETWORK	\
 	    --program obj/nrf5340-net.hex -r
 
+reset:
+	nrfjprog -f NRF53 -r
+
 clean:
 	@rm -rf obj/*
 
