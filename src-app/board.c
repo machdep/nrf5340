@@ -41,7 +41,7 @@ board_init(void)
 	mdx_device_t nvic;
 
 	mdx_fl_init();
-	mdx_fl_add_region(0x20021000, 0x1f000);
+	mdx_fl_add_region((void *)0x20021000, 0x1f000);
 
 	mdx_of_install_dtbp((void *)0xf8000);
 	mdx_of_probe_devices();
